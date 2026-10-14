@@ -1,4 +1,4 @@
-package org.braindump;
+package org.braindump.resource;
 
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
