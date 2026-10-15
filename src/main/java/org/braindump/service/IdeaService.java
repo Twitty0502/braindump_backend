@@ -1,5 +1,7 @@
 package org.braindump.service;
 
+import java.util.List;
+
 import org.braindump.model.BoardEntity;
 import org.braindump.model.IdeaEntity;
 import org.braindump.model.ParticipantEntity;
@@ -26,6 +28,10 @@ public class IdeaService {
         this.ideaRepository = ideaRepository;
         this.boardRepository = boardRepository;
         this.participantRepository = participantRepository;
+    }
+
+    public List<IdeaEntity> listAll() {
+        return ideaRepository.listAll();
     }
 
     @Transactional
@@ -56,5 +62,25 @@ public class IdeaService {
         // Spara idén i databasen
         ideaRepository.persist(idea);
         return idea;
+    }
+
+    // Radera en idé baserat på dess id
+    @Transactional
+    public void deleteIdea(Long id) {
+        IdeaEntity idea = ideaRepository.findByIdOptional(id)
+                .orElseThrow(() -> new NotFoundException(
+                        "Idea not found with id: " + id));
+
+        ideaRepository.delete(idea);
+    }
+
+    // Rensa alla idéer kopplade till en specifik board
+    @Transactional
+    public void clearBoard(Long boardId) {
+        boardRepository.findByIdOptional(boardId)
+                .orElseThrow(() -> new NotFoundException(
+                        "Board not found with id: " + boardId));
+
+        ideaRepository.delete("board.id", boardId);
     }
 }
