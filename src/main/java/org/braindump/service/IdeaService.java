@@ -42,6 +42,10 @@ public class IdeaService {
         @Transactional
         public IdeaEntity createIdea(String title, String description, UUID boardId, Long participantId) {
 
+                if (title == null || title.isBlank()) {
+                        throw new BadRequestException("Title cannot be empty");
+                }
+
                 BoardEntity board = boardRepository.findByIdOptional(boardId)
                                 .orElseThrow(() -> new NotFoundException("Board not found with id: " + boardId));
                 IdeaEntity idea = new IdeaEntity();
