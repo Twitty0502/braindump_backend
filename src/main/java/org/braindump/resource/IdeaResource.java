@@ -26,11 +26,21 @@ public class IdeaResource {
     @Inject
     IdeaService ideaService;
 
+    // Endpoint för att hämta alla idéer oavsett vilken board de tillhör
     @GET
     public List<IdeaEntity> getAllIdeas() {
         return ideaService.listAll();
     }
 
+    // Endpoint för att hämta alla idéer utifrån en specifik board
+    @GET
+    @Path("/board/{boardId}")
+    public List<IdeaEntity> getIdeasByBoard(@PathParam("boardId") UUID boardId) {
+
+        return ideaService.listByBoard(boardId);
+    }
+
+    // Endpoint för att skapa en ny idé
     @POST
     @Path("/create")
     public Response createIdea(IdeaEntity idea) {

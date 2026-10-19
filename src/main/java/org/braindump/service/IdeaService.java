@@ -39,6 +39,15 @@ public class IdeaService {
                 return ideaRepository.listAll();
         }
 
+        // Hämta alla idéer kopplade till en specifik board
+        public List<IdeaEntity> listByBoard(UUID boardId) {
+
+                // Kontrollera att boarden finns i backend innan hämtning
+                boardRepository.findByIdOptional(boardId)
+                                .orElseThrow(() -> new NotFoundException("Board not found with id: " + boardId));
+                return ideaRepository.list("board.id", boardId);
+        }
+
         @Transactional
         public IdeaEntity createIdea(String title, String description, UUID boardId, Long participantId) {
 
