@@ -1,6 +1,7 @@
 package org.braindump.resource;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.braindump.model.IdeaEntity;
 import org.braindump.service.IdeaService;
@@ -55,7 +56,7 @@ public class IdeaResource {
     // Endpoint för att rensa alla idéer kopplade till en specifik board
     @DELETE
     @Path("/board/{boardId}")
-    public Response clearBoard(@PathParam("boardId") Long boardId) {
+    public Response clearBoard(@PathParam("boardId") UUID boardId) {
         ideaService.clearBoard(boardId);
         return Response.noContent().build();
     }

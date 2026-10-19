@@ -1,6 +1,7 @@
 package org.braindump.service;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.braindump.model.BoardEntity;
 import org.braindump.model.IdeaEntity;
@@ -8,6 +9,7 @@ import org.braindump.model.ParticipantEntity;
 import org.braindump.repository.BoardRepository;
 import org.braindump.repository.IdeaRepository;
 import org.braindump.repository.ParticipantRepository;
+import org.braindump.websocket.BoardEventService;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
@@ -17,70 +19,104 @@ import jakarta.ws.rs.NotFoundException;
 @ApplicationScoped
 public class IdeaService {
 
-    private final IdeaRepository ideaRepository;
-    private final BoardRepository boardRepository;
-    private final ParticipantRepository participantRepository;
+        private final IdeaRepository ideaRepository;
+        private final BoardRepository boardRepository;
+        private final ParticipantRepository participantRepository;
+        private final BoardEventService boardEventService;
 
-    public IdeaService(
-            IdeaRepository ideaRepository,
-            BoardRepository boardRepository,
-            ParticipantRepository participantRepository) {
-        this.ideaRepository = ideaRepository;
-        this.boardRepository = boardRepository;
-        this.participantRepository = participantRepository;
-    }
-
-    public List<IdeaEntity> listAll() {
-        return ideaRepository.listAll();
-    }
-
-    @Transactional
-    public IdeaEntity createIdea(String title, String description, Long boardId, Long participantId) {
-
-        BoardEntity board = boardRepository.findByIdOptional(boardId)
-                .orElseThrow(() -> new NotFoundException("Board not found with id: " + boardId));
-        IdeaEntity idea = new IdeaEntity();
-
-        // Skapa idén
-        idea.setTitle(title);
-        idea.setDescription(description);
-
-        // Koppla idén till tavlan/boarden
-        idea.setBoard(board);
-
-        // Koppla idén till deltagaren
-        // Se till att deltagaren finns innan idén skapas
-        ParticipantEntity participant = participantRepository.findByIdOptional(participantId)
-                .orElseThrow(() -> new NotFoundException("Participant not found with id: " + participantId));
-        idea.setParticipant(participant);
-
-        // Se till att deltagaren är kopplad till rätt board innan idén kan skapas
-        if (participant.getBoard() == null || !participant.getBoard().getId().equals(boardId)) {
-            throw new BadRequestException(
-                    "Participant with id: " + participantId + " is not part of board with id: " + boardId);
+        public IdeaService(
+                        IdeaRepository ideaRepository,
+                        BoardRepository boardRepository,
+                        ParticipantRepository participantRepository,
+                        BoardEventService boardEventService) {
+                this.ideaRepository = ideaRepository;
+                this.boardRepository = boardRepository;
+                this.participantRepository = participantRepository;
+                this.boardEventService = boardEventService;
         }
-        // Spara idén i databasen
-        ideaRepository.persist(idea);
-        return idea;
-    }
 
-    // Radera en idé baserat på dess id
-    @Transactional
-    public void deleteIdea(Long id) {
-        IdeaEntity idea = ideaRepository.findByIdOptional(id)
-                .orElseThrow(() -> new NotFoundException(
-                        "Idea not found with id: " + id));
+        public List<IdeaEntity> listAll() {
+                return ideaRepository.listAll();
+        }
 
-        ideaRepository.delete(idea);
-    }
+        @Transactional
+        public IdeaEntity createIdea(String title, String description, UUID boardId, Long participantId) {
 
-    // Rensa alla idéer kopplade till en specifik board
-    @Transactional
-    public void clearBoard(Long boardId) {
-        boardRepository.findByIdOptional(boardId)
-                .orElseThrow(() -> new NotFoundException(
-                        "Board not found with id: " + boardId));
+                if (title == null || title.isBlank()) {
+                        throw new BadRequestException("Title cannot be empty");
+                }
 
-        ideaRepository.delete("board.id", boardId);
-    }
+                BoardEntity board = boardRepository.findByIdOptional(boardId)
+                                .orElseThrow(() -> new NotFoundException("Board not found with id: " + boardId));
+                IdeaEntity idea = new IdeaEntity();
+
+                // Skapa idén
+                idea.setTitle(title);
+                idea.setDescription(description);
+
+                // Koppla idén till tavlan/boarden
+                idea.setBoard(board);
+
+                // Koppla idén till deltagaren
+                // Se till att deltagaren finns innan idén skapas
+                ParticipantEntity participant = participantRepository.findByIdOptional(participantId)
+                                .orElseThrow(() -> new NotFoundException(
+                                                "Participant not found with id: " + participantId));
+                idea.setParticipant(participant);
+
+                // Se till att deltagaren är kopplad till rätt board innan idén kan skapas
+                if (participant.getBoard() == null || !participant.getBoard().getId().equals(boardId)) {
+                        throw new BadRequestException(
+                                        "Participant with id: " + participantId + " is not part of board with id: "
+                                                        + boardId);
+                }
+                // Spara idén i databasen
+                ideaRepository.persist(idea);
+
+                // Uppdatera alla anslutna användare i realtid via websocket vid ändringar
+                // boardId omvandlas till String eftersom broadcastToBoard tar emot ett
+                // String-ID.
+                // JSON-meddelandet talar om vilken händelse som inträffat och vilken board det
+                // gäller.
+                // Frontend kan senare lyssna på händelsen och uppdatera visningen utan att
+                // ladda om sidan.
+                boardEventService.broadcastToBoard(boardId.toString(),
+                                "{\"type\":\"IDEA_CREATED\",\"boardId\":\"" + boardId + "\"}");
+
+                return idea;
+        }
+
+        // Radera en idé baserat på dess id
+        @Transactional
+        public void deleteIdea(Long id) {
+                IdeaEntity idea = ideaRepository.findByIdOptional(id)
+                                .orElseThrow(() -> new NotFoundException(
+                                                "Idea not found with id: " + id));
+
+                // Hämta boardId från idén innan den tas bort
+                UUID boardId = idea.getBoard().getId();
+
+                // Radera iden från databasen
+                ideaRepository.delete(idea);
+
+                // Uppdatera ändringar i realtid för anslutna
+                boardEventService.broadcastToBoard(boardId.toString(),
+                                "{\"type\":\"IDEA_DELETED\",\"ideaId\":" + id
+                                                + ",\"boardId\":\"" + boardId + "\"}");
+        }
+
+        // Rensa alla idéer kopplade till en specifik board
+        @Transactional
+        public void clearBoard(UUID boardId) {
+                boardRepository.findByIdOptional(boardId)
+                                .orElseThrow(() -> new NotFoundException(
+                                                "Board not found with id: " + boardId));
+
+                // Radera alla idéer från specifik boardId
+                ideaRepository.delete("board.id", boardId);
+
+                boardEventService.broadcastToBoard(
+                                boardId.toString(),
+                                "{\"type\":\"BOARD_CLEARED\",\"boardId\":\"" + boardId + "\"}");
+        }
 }
