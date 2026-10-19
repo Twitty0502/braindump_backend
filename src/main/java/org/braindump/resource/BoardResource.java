@@ -1,6 +1,7 @@
 package org.braindump.resource;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.braindump.model.BoardEntity;
 import org.braindump.model.ParticipantEntity;
@@ -48,7 +49,7 @@ public class BoardResource {
     @POST
     @Path("/{boardId}/participants")
     @Transactional
-    public Response addParticipant(@PathParam("boardId") Long boardId, ParticipantEntity participant) {
+    public Response addParticipant(@PathParam("boardId") UUID boardId, ParticipantEntity participant) {
         ParticipantEntity createdParticipant = participantService.joinBoard(
                 participant.getDisplayName(), boardId);
 

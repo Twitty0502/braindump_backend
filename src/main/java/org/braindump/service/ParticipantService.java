@@ -1,5 +1,7 @@
 package org.braindump.service;
 
+import java.util.UUID;
+
 import org.braindump.model.BoardEntity;
 import org.braindump.model.ParticipantEntity;
 import org.braindump.repository.BoardRepository;
@@ -24,7 +26,7 @@ public class ParticipantService {
     }
 
     @Transactional
-    public ParticipantEntity joinBoard(String displayName, Long boardId) {
+    public ParticipantEntity joinBoard(String displayName, UUID boardId) {
         // Kontrollera att displayName inte är null eller tomt
         if (displayName == null || displayName.trim().isEmpty()) {
             throw new BadRequestException("Display name cannot be null or empty");

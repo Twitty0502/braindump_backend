@@ -1,6 +1,7 @@
 package org.braindump.service;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.braindump.model.BoardEntity;
 import org.braindump.repository.BoardRepository;
@@ -22,7 +23,7 @@ public class BoardService {
         return boardRepository.listAll();
     }
 
-    public BoardEntity getBoardById(Long id) {
+    public BoardEntity getBoardById(UUID id) {
         return boardRepository.findByIdOptional(id)
                 .orElseThrow(() -> new NotFoundException("Board not found with id: " + id));
     }
@@ -35,14 +36,14 @@ public class BoardService {
     }
 
     @Transactional
-    public BoardEntity updateBoard(Long id, BoardEntity updatedBoard) {
+    public BoardEntity updateBoard(UUID id, BoardEntity updatedBoard) {
         BoardEntity activeBoard = getBoardById(id);
         activeBoard.setName(updatedBoard.getName());
         return activeBoard;
     }
 
     @Transactional
-    public void deleteBoard(Long id) {
+    public void deleteBoard(UUID id) {
         BoardEntity activeBoard = getBoardById(id);
         boardRepository.delete(activeBoard);
     }
