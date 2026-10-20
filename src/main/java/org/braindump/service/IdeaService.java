@@ -82,15 +82,28 @@ public class IdeaService {
                 // Spara idén i databasen
                 ideaRepository.persist(idea);
 
-                // Uppdatera alla anslutna användare i realtid via websocket vid ändringar
-                // boardId omvandlas till String eftersom broadcastToBoard tar emot ett
-                // String-ID.
-                // JSON-meddelandet talar om vilken händelse som inträffat och vilken board det
-                // gäller.
-                // Frontend kan senare lyssna på händelsen och uppdatera visningen utan att
-                // ladda om sidan.
-                boardEventService.broadcastToBoard(boardId.toString(),
-                                "{\"type\":\"IDEA_CREATED\",\"boardId\":\"" + boardId + "\"}");
+                // vertx är klass för att skapa och hantera JSON data vilket vi i detta fall
+                // använder för att paketera händelen när en idé skapas
+                // vi tar nu in information kring idens id, titel, beskrivning, deltagarens id
+                // samt namn.
+                io.vertx.core.json.JsonObject ideaData = new io.vertx.core.json.JsonObject().put("id", idea.getId())
+                                .put("title", idea.getTitle())
+                                .put("description", idea.getDescription())
+                                .put("participant",
+                                                new io.vertx.core.json.JsonObject()
+                                                                .put("id", participant.getId())
+                                                                .put("displayName",
+                                                                                participant.getDisplayName()));
+                // Beskriv vilken händelse som har inträffat.
+                io.vertx.core.json.JsonObject event = new io.vertx.core.json.JsonObject()
+                                .put("type", "IDEA_CREATED")
+                                .put("boardId", boardId.toString())
+                                .put("idea", ideaData);
+
+                // Skicka händelsen till deltagarna på den aktuella boarden.
+                boardEventService.broadcastToBoard(
+                                boardId.toString(),
+                                event.encode());
 
                 return idea;
         }
