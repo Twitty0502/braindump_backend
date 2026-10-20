@@ -86,7 +86,8 @@ public class IdeaService {
                 // använder för att paketera händelen när en idé skapas
                 // vi tar nu in information kring idens id, titel, beskrivning, deltagarens id
                 // samt namn.
-                io.vertx.core.json.JsonObject ideaData = new io.vertx.core.json.JsonObject().put("id", idea.getId())
+                io.vertx.core.json.JsonObject ideaData = new io.vertx.core.json.JsonObject()
+                                .put("id", idea.getId())
                                 .put("title", idea.getTitle())
                                 .put("description", idea.getDescription())
                                 .put("participant",
