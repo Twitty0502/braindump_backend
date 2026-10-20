@@ -5,12 +5,11 @@ import java.util.UUID;
 
 import org.braindump.model.BoardEntity;
 import org.braindump.model.ParticipantEntity;
-import org.braindump.repository.BoardRepository;
+import org.braindump.service.BoardService;
 import org.braindump.service.ParticipantService;
 
 import jakarta.ws.rs.Produces;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -26,29 +25,27 @@ import jakarta.ws.rs.Path;
 public class BoardResource {
 
     @Inject
-    BoardRepository boardRepository;
-    @Inject
     ParticipantService participantService;
+    @Inject
+    BoardService boardService;
 
     @GET
     public List<BoardEntity> getAllBoards() {
-        return boardRepository.listAll();
+        return boardService.getAllBoards();
     }
 
     @POST
     @Path("/create")
-    @Transactional
     public Response createBoard(BoardEntity board) {
-        board.setId(null); // Säkerhetsställ att id är null vid skapandet
-        boardRepository.persist(board);
+        BoardEntity created = boardService.createBoard(board);
+
         return Response.status(Response.Status.CREATED)
-                .entity(board)
+                .entity(created)
                 .build();
     }
 
     @POST
     @Path("/{boardId}/participants")
-    @Transactional
     public Response addParticipant(@PathParam("boardId") UUID boardId, ParticipantEntity participant) {
         ParticipantEntity createdParticipant = participantService.joinBoard(
                 participant.getDisplayName(), boardId);
