@@ -34,6 +34,12 @@ public class BoardResource {
         return boardService.getAllBoards();
     }
 
+    @GET
+    @Path("/{id}")
+    public BoardEntity getBoardById(@PathParam("id") UUID id) {
+        return boardService.getBoardById(id);
+    }
+
     @POST
     @Path("/create")
     public Response createBoard(BoardEntity board) {
