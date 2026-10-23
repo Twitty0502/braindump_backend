@@ -1,6 +1,11 @@
 package org.braindump.model;
 
+import org.braindump.enums.IdeaCategories;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -13,6 +18,10 @@ import jakarta.validation.constraints.Size;
 @Entity
 @Table(name = "ideas")
 public class IdeaEntity {
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private IdeaCategories categories = IdeaCategories.OTHER;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
