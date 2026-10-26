@@ -83,4 +83,12 @@ public class IdeaEntity {
         this.participant = participant;
     }
 
+    public IdeaCategories getCategories() {
+        return categories;
+    }
+
+    public void setCategories(IdeaCategories categories) {
+        this.categories = categories;
+    }
+
 }
