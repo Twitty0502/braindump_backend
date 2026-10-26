@@ -3,6 +3,8 @@ package org.braindump.service;
 import java.util.List;
 import java.util.UUID;
 
+import org.braindump.ai.IdeaCategoriesAiService;
+import org.braindump.enums.IdeaCategories;
 import org.braindump.model.BoardEntity;
 import org.braindump.model.IdeaEntity;
 import org.braindump.model.ParticipantEntity;
@@ -23,16 +25,19 @@ public class IdeaService {
         private final BoardRepository boardRepository;
         private final ParticipantRepository participantRepository;
         private final BoardEventService boardEventService;
+        private final IdeaCategoriesAiService ideaCategoriesAiService;
 
         public IdeaService(
                         IdeaRepository ideaRepository,
                         BoardRepository boardRepository,
                         ParticipantRepository participantRepository,
-                        BoardEventService boardEventService) {
+                        BoardEventService boardEventService,
+                        IdeaCategoriesAiService ideaCategoriesAiService) {
                 this.ideaRepository = ideaRepository;
                 this.boardRepository = boardRepository;
                 this.participantRepository = participantRepository;
                 this.boardEventService = boardEventService;
+                this.ideaCategoriesAiService = ideaCategoriesAiService;
         }
 
         public List<IdeaEntity> listAll() {
@@ -79,6 +84,15 @@ public class IdeaService {
                                         "Participant with id: " + participantId + " is not part of board with id: "
                                                         + boardId);
                 }
+
+                // Kategorisera idéer genom AI
+                // Idéns titel tillsammans med beskrivning, ifall beskrivningen är tom använd
+                // tom sträng
+                String ideaText = title + "\n" + (description == null ? "" : description);
+                // Kategorisera idén utifrån textens innehåll
+                IdeaCategories category = ideaCategoriesAiService.categorizeIdea(ideaText);
+                idea.setCategories(category);
+
                 // Spara idén i databasen
                 ideaRepository.persist(idea);
 
@@ -90,6 +104,7 @@ public class IdeaService {
                                 .put("id", idea.getId())
                                 .put("title", idea.getTitle())
                                 .put("description", idea.getDescription())
+                                .put("categories", idea.getCategories().name())
                                 .put("participant",
                                                 new io.vertx.core.json.JsonObject()
                                                                 .put("id", participant.getId())
