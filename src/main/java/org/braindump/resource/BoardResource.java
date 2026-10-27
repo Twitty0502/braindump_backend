@@ -10,6 +10,7 @@ import org.braindump.service.ParticipantService;
 
 import jakarta.ws.rs.Produces;
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -42,7 +43,7 @@ public class BoardResource {
 
     @POST
     @Path("/create")
-    public Response createBoard(BoardEntity board) {
+    public Response createBoard(@Valid BoardEntity board) {
         BoardEntity created = boardService.createBoard(board);
 
         return Response.status(Response.Status.CREATED)
@@ -52,7 +53,7 @@ public class BoardResource {
 
     @POST
     @Path("/{boardId}/participants")
-    public Response addParticipant(@PathParam("boardId") UUID boardId, ParticipantEntity participant) {
+    public Response addParticipant(@PathParam("boardId") UUID boardId, @Valid ParticipantEntity participant) {
         ParticipantEntity createdParticipant = participantService.joinBoard(
                 participant.getDisplayName(), boardId);
 
