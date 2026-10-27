@@ -7,6 +7,7 @@ import org.braindump.model.IdeaEntity;
 import org.braindump.service.IdeaService;
 
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -43,7 +44,7 @@ public class IdeaResource {
     // Endpoint för att skapa en ny idé
     @POST
     @Path("/create")
-    public Response createIdea(IdeaEntity idea) {
+    public Response createIdea(@Valid IdeaEntity idea) {
         IdeaEntity createdIdea = ideaService.createIdea(
                 idea.getTitle(),
                 idea.getDescription(),
