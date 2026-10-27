@@ -85,16 +85,24 @@ public class IdeaService {
                                                         + boardId);
                 }
 
+                idea.setCategories(IdeaCategories.OTHER);
+
+                // Spara idén i databasen
+                ideaRepository.persist(idea);
+
                 // Kategorisera idéer genom AI
                 // Idéns titel tillsammans med beskrivning, ifall beskrivningen är tom använd
                 // tom sträng
                 String ideaText = title + "\n" + (description == null ? "" : description);
-                // Kategorisera idén utifrån textens innehåll
-                IdeaCategories category = ideaCategoriesAiService.categorizeIdea(ideaText);
-                idea.setCategories(category);
 
-                // Spara idén i databasen
-                ideaRepository.persist(idea);
+                // Försök kategorisera idén med AI
+                try {
+                        IdeaCategories category = ideaCategoriesAiService.categorizeIdea(ideaText);
+                        idea.setCategories(category);
+                } catch (Exception e) {
+                        // Logga felet men låt idén finnas kvar även om Ai inte lyckas kategorisera
+                        System.err.println("Kategorisering misslyckades:" + e.getMessage());
+                }
 
                 // vertx är klass för att skapa och hantera JSON data vilket vi i detta fall
                 // använder för att paketera händelen när en idé skapas
