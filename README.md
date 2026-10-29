@@ -1,59 +1,188 @@
-# braindump_backend
+# BrainDump Backend
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+https://braindump-frontend.onrender.com/
 
-If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
+BrainDump Backend är serverdelen till BrainDump, en applikation för att samla, organisera och kategorisera idéer. Backend hanterar bland annat tavlor (*boards*), idéer och deltagare samt kommunicerar med databasen och AI-tjänsten för automatisk "nyckelords-kategorisering".
 
-## Running the application in dev mode
+Backend är byggd i Java med Quarkus och exponerar ett REST API som används av Angular-frontend.
 
-You can run your application in dev mode that enables live coding using:
+## Funktioner
 
-```shell script
+- Skapa och hämta tavlor (*boards*).
+- Hantera deltagare på tavlor.
+- Skapa, hämta och radera idéer.
+- Hämta idéer kopplade till en specifik tavla.
+- Automatisk kategorisering av idéer med hjälp av AI.
+- Lagring av information i PostgreSQL.
+- REST API för kommunikation med frontend.
+
+## Tekniker
+
+- **Java 21** – programmeringsspråk.
+- **Quarkus 3.40.1** – backendramverk.
+- **Maven** – byggverktyg och beroendehantering.
+- **PostgreSQL** – relationsdatabas.
+- **Hibernate ORM / Panache** – databasinteraktion.
+- **LangChain4j och OpenAI** – AI-baserad kategorisering av idéer.
+- **Render** – hosting och driftsättning av backend.
+- **Neon** - Databas host
+
+## Kategorisering av idéer med AI
+
+Backend använder LangChain4j och OpenAI för att automatiskt kategorisera idéer när de skapas.
+
+Följande kategorier används i applikationen:
+
+| Kategori | Beskrivning |
+|---|---|
+| `NEW_IDEA` | Nya idéer och förslag |
+| `IMPROVEMENT` | Förbättringar |
+| `PROBLEM_SOLVING` | Problemlösning |
+| `PROCESS_AND_WAYS_OF_WORKING` | Processer och arbetssätt |
+| `ACTIVITY_AND_PROJECT` | Aktiviteter och projekt |
+| `CONTENT_AND_COMMUNICATION` | Innehåll och kommunikation |
+| `OTHER` | Övriga idéer |
+
+
+## REST API
+
+Backend exponerar REST-endpoints som används av frontend.
+
+### Tavlor – Boards
+
+| Metod | Endpoint | Funktion |
+|---|---|---|
+| `GET` | `/boards` | Hämtar alla tavlor |
+| `GET` | `/boards/{id}` | Hämtar en specifik tavla |
+| `POST` | `/boards/create` | Skapar en ny tavla |
+| `POST` | `/boards/{boardId}/participants` | Lägger till en deltagare på en tavla |
+
+### Idéer – Ideas
+
+| Metod | Endpoint | Funktion |
+|---|---|---|
+| `GET` | `/ideas` | Hämtar idéer |
+| `GET` | `/ideas/board/{boardId}` | Hämtar idéer för en specifik tavla |
+| `POST` | `/ideas/create` | Skapar en ny idé |
+| `DELETE` | `/ideas/{id}` | Raderar en specifik idé |
+| `DELETE` | `/ideas/board/{boardId}` | Raderar idéer kopplade till en tavla |
+
+## Konfiguration
+
+Konfigurationen finns i:
+
+```text
+src/main/resources/application.properties
+```
+
+### CORS
+
+Exempel på konfiguration för lokal utveckling:
+
+```properties
+quarkus.http.cors.enabled=true
+quarkus.http.cors.origins=http://localhost:4200
+quarkus.http.cors.methods=GET,POST,PUT,DELETE,OPTIONS
+quarkus.http.cors.headers=accept,authorization,content-type,x-requested-with
+```
+
+I produktion behöver frontendens publicerade URL tillåtas i stället för, eller utöver, den lokala utvecklingsadressen. Tillåt endast de domäner som faktiskt ska använda API:t.
+
+### OpenAI
+
+API-nyckeln konfigureras via en miljövariabel:
+
+```properties
+quarkus.langchain4j.openai.api-key=${OPENAI_API_KEY}
+```
+
+Miljövariabeln `OPENAI_API_KEY` måste finnas i den miljö där backend körs.
+
+### PostgreSQL
+
+Backend använder PostgreSQL för att lagra applikationens data. I produktion måste databasanslutningen konfigureras med rätt databas-URL, användarnamn och lösenord.
+
+Exempel på konfiguration för produktion:
+
+```properties
+quarkus.datasource.db-kind=postgresql
+%prod.quarkus.datasource.jdbc.url=${DB_URL}
+%prod.quarkus.datasource.username=${DB_USERNAME}
+%prod.quarkus.datasource.password=${DB_PASSWORD}
+```
+
+Miljövariablerna `URL_DB`, `USERNAME_DB` och `PASSWORD_DB` måste konfigureras i Render och peka på rätt databas. Anpassa inställningarna efter projektets befintliga konfiguration.
+
+## Köra projektet lokalt
+
+### Förutsättningar
+
+- Java 21
+- Maven eller projektets Maven Wrapper
+- PostgreSQL, om projektet inte använder en separat utvecklingsdatabas
+- En OpenAI API-nyckel om AI-funktionerna ska användas
+
+### 1. Klona repot
+
+```bash
+git clone https://github.com/Twitty0502/braindump_backend.git
+cd braindump_backend
+```
+
+### 2. Konfigurera miljövariabler
+
+Sätt `OPENAI_API_KEY` i din lokala utvecklingsmiljö. Om projektet använder en separat PostgreSQL-databas behöver även databasinställningarna konfigureras.
+
+Exempel:
+```bash
+export OPENAI_API_KEY="din-api-nyckel"
+```
+
+Använd din riktiga API-nyckel lokalt och dela den inte i källkod eller loggar.
+
+### 3. Starta backend
+
+Med Maven Wrapper:
+
+```bash
 ./mvnw quarkus:dev
 ```
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:8080/q/dev/>.
+Quarkus kör normalt utvecklingsservern på:
 
-## Packaging and running the application
-
-The application can be packaged using:
-
-```shell script
-./mvnw package
+```text
+http://localhost:8080
 ```
 
-It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
+Den faktiska adressen kan ändras genom projektets konfiguration.
 
-The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
 
-If you want to build an _über-jar_, execute the following command:
+### Miljövariabler i Render
 
-```shell script
-./mvnw package -Dquarkus.package.jar.type=uber-jar
-```
+Konfigurera de miljövariabler som backend behöver, exempelvis:
 
-The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
+| Variabel | Användning |
+|---|---|
+| `OPENAI_API_KEY` | OpenAI API-nyckel |
+| `URL_DB` | JDBC-anslutningsadress till PostgreSQL |
+| `USERNAME_DB` | Databasens användarnamn |
+| `PASSWORD_DB` | Databasens lösenord |
 
-## Creating a native executable
+Variablerna ovan måste stämma överens med namnen i `application.properties`. Om projektet använder andra variabelnamn ska de befintliga namnen behållas eller konfigurationen uppdateras konsekvent.
 
-You can create a native executable using:
 
-```shell script
-./mvnw package -Dnative
-```
+## Vidare utveckling
 
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using:
+Möjliga framtida förbättringar är:
 
-```shell script
-./mvnw package -Dnative -Dquarkus.native.container-build=true
-```
+- Automatiserade tester för REST-endpoints.
+- Dokumentation av API:t med OpenAPI/Swagger.
+- Automatiserade databasmigrationer.
+- Förbättrad felhantering och loggning.
+- Tydligare separering mellan utvecklings- och produktionskonfiguration.
 
-You can then execute your native executable with: `./target/braindump_backend-1.0.0-SNAPSHOT-runner`
 
-If you want to learn more about building native executables, please consult <https://quarkus.io/guides/maven-tooling>.
-
-## Related Guides
+## Diverse länkar till använda guider:
 
 - Hibernate ORM ([guide](https://quarkus.io/guides/hibernate-orm)): Object-relational mapping with JPA/Hibernate for relational database access
 - Hibernate Validator ([guide](https://quarkus.io/guides/validation)): Bean validation using Hibernate Validator and Jakarta Validation annotations
@@ -63,26 +192,4 @@ If you want to learn more about building native executables, please consult <htt
 - Hibernate ORM with Panache ([guide](https://quarkus.io/guides/hibernate-orm-panache)): Simplified JPA/Hibernate data access layer with active record and repository patterns
 - JDBC Driver - PostgreSQL ([guide](https://quarkus.io/guides/datasource)): Connect to the PostgreSQL database via JDBC
 
-## Provided Code
 
-### Hibernate ORM
-
-Create your first JPA entity
-
-[Related guide section...](https://quarkus.io/guides/hibernate-orm)
-
-
-[Related Hibernate with Panache section...](https://quarkus.io/guides/hibernate-orm-panache)
-
-
-### REST
-
-Easily start your REST Web Services
-
-[Related guide section...](https://quarkus.io/guides/getting-started-reactive#reactive-jax-rs-resources)
-
-### WebSockets
-
-WebSocket communication channel starter code
-
-[Related guide section...](https://quarkus.io/guides/websockets)
